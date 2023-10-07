@@ -1,4 +1,4 @@
 .idea
 venv
 tg_token.py
-__pycache__
+__pycache__/
