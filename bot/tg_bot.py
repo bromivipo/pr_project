@@ -11,6 +11,10 @@ HELP = '''/start - начать работу
 /register - написать строку в обратном порядке
 /set_deadline - назначить личный дедлайн
 /set_project_deadline - назначить дедлайн на проекте
+/deadline_done
+/delete_deadline
+/delete_project
+/delete_project_deadline
 '''
 STORAGE = MemoryStorage()
 bot = Bot(API)
@@ -34,13 +38,6 @@ class CreateProject(StatesGroup):
     login_list = State()
 
 
-class ProjectDeadline(StatesGroup):
-    project_name = State()
-    task_name = State()
-    description = State()
-    deadline = State()
-
-
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
     await message.answer(text=HELP)
@@ -50,6 +47,8 @@ async def help(message: types.Message):
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     await message.answer(text='Бот подключен! Чтобы узнать, что он умеет, напишите /help')
+
+
 
 
 @dp.message_handler(commands=['register'])
@@ -72,6 +71,9 @@ async def register_pass(message: types.Message, state: FSMContext):
     await message.answer(f"Логин: {data['login']}\n"
                          f"Пароль: {data['password']}")
     await state.finish()
+
+
+
 
 
 @dp.message_handler(commands=['set_deadline'])
@@ -102,6 +104,9 @@ async def set_deadline_date(message: types.Message, state: FSMContext):
                          f"Описание: {data['description']}\n"
                          f"Дедлайн: {data['deadline']}")
     await state.finish()
+
+
+
 
 
 @dp.message_handler(commands=['create_project'])
@@ -135,11 +140,149 @@ async def create_project_logins(message: types.Message, state: FSMContext):
     else:
         await message.answer(text=data["login_list"])
         await state.finish()
-    
+
+
+
+class ProjectDeadline(StatesGroup):
+    project_name = State()
+    task_name = State()
+    description = State()
+    login = State()
+    deadline = State()
+
+
+@dp.message_handler(commands=['set_project_deadline'])
+async def set_project_deadline(message: types.Message):
+    await message.answer(text='Введите название проекта')
+    await ProjectDeadline.project_name.set()
+
+
+@dp.message_handler(state=ProjectDeadline.project_name)
+async def set_deadline_project_name(message: types.Message, state: FSMContext):
+    await message.answer(text='Напишите название задачи')
+    await state.update_data(project_name=message.text)
+    await ProjectDeadline.task_name.set()
+
+
+@dp.message_handler(state=ProjectDeadline.task_name)
+async def set_deadline_project_task_name(message: types.Message, state: FSMContext):
+    await message.answer(text='Напишите описание задачи')
+    await state.update_data(task_name=message.text)
+    await ProjectDeadline.description.set()
+
+
+@dp.message_handler(state=ProjectDeadline.description)
+async def set_deadline_project_description(message: types.Message, state: FSMContext):
+    await message.answer(text='Укажите логин участника, которому будет назначена задача ')
+    await state.update_data(description=message.text)
+    await ProjectDeadline.login.set()
+
+
+@dp.message_handler(state=ProjectDeadline.login)
+async def set_deadline_project_login(message: types.Message, state: FSMContext):
+    await message.answer(text='Задайте дедлайн в формате dd.mm.yyyy')
+    await state.update_data(login=message.text)
+    await ProjectDeadline.deadline.set()
+
+
+@dp.message_handler(state=ProjectDeadline.deadline)
+async def set_deadline_project_date(message: types.Message, state: FSMContext):
+    await state.update_data(deadline=message.text)
+    data = await state.get_data()
+    await message.answer(f"Название проекта: {data['project_name']}\n"
+                         f"Название задачи: {data['task_name']}\n"
+                         f"Описание: {data['description']}\n"
+                         f"Логин: {data['login']}\n"
+                         f"Дедлайн: {data['deadline']}")
+    await state.finish()
+
+
 
 @dp.message_handler(commands=['check_deadlines'])
 async def check_deadline(message: types.Message):
     await message.answer(text='Вот ваши дедлайны')
+
+
+
+class DeadlineDone(StatesGroup):
+    name = State()
+
+
+@dp.message_handler(commands=['deadline_done'])
+async def deadline_done(message: types.Message):
+    await message.answer(text='Название задачи')
+    await DeadlineDone.name.set()
+
+
+@dp.message_handler(state=DeadlineDone.name)
+async def deadline_done_name(message: types.Message, state: FSMContext):
+    await message.answer(text=f"Задача {message.text} завершена")
+    await state.finish()
+
+
+class DeleteDeadline(StatesGroup):
+    name = State()
+
+
+@dp.message_handler(commands=['delete_deadline'])
+async def deadline_delete(message: types.Message):
+    await message.answer(text='Название задачи')
+    await DeleteDeadline.name.set()
+
+
+@dp.message_handler(state=DeleteDeadline.name)
+async def deadline_delete_name(message: types.Message, state: FSMContext):
+    await message.answer(text=f"Задача {message.text} удалена")
+    await state.finish()
+
+
+
+class DeleteProject(StatesGroup):
+    name = State()
+
+
+@dp.message_handler(commands=['delete_project'])
+async def project_delete(message: types.Message):
+    await message.answer(text='Название проекта')
+    await DeleteProject.name.set()
+
+
+@dp.message_handler(state=DeleteProject.name)
+async def project_delete_name(message: types.Message, state: FSMContext):
+    await message.answer(text=f"Проект {message.text} удален")
+    await state.finish()
+
+
+
+
+class DeleteProjectDeadline(StatesGroup):
+    project_name = State()
+    task_name = State()
+
+@dp.message_handler(commands=['delete_project_deadline'])
+async def project_deadline_delete(message: types.Message):
+    await message.answer(text='Название проекта')
+    await DeleteProjectDeadline.project_name.set()
+
+
+@dp.message_handler(state=DeleteProjectDeadline.project_name)
+async def project_deadline_delete_proj_name(message: types.Message, state: FSMContext):
+    await message.answer(text="Название задачи")
+    await state.update_data(project_name=message.text)
+    await DeleteProjectDeadline.task_name.set()
+
+
+@dp.message_handler(state=DeleteProjectDeadline.task_name)
+async def project_deadline_delete_task_name(message: types.Message, state: FSMContext):
+    await state.update_data(task_name=message.text)
+    data = await state.get_data()
+    await message.answer(f"Название проекта: {data['project_name']}\n"
+                         f"Название удаленной задачи: {data['task_name']}")
+    await state.finish()
+
+
+
+
 
 
 @dp.message_handler()

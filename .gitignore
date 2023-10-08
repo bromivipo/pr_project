@@ -1,6 +1,7 @@
 tg_token.py
 # Byte-compiled / optimized / DLL files
-/bot/__pycache__/
+__pycache__/
+
 *.py[cod]
 *$py.class
 .pyc
