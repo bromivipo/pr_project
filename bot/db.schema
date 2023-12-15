@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS logins(
+    user_id integer PRIMARY KEY,
+    login text NOT NULL,
+    password text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS deadlines(
+    deadline_id integer PRIMARY KEY,
+    user_id integer NOT NULL,
+    task_name varchar NOT NULL,
+    task_description varchar NOT NULL,
+    deadline datetime NOT NULL,
+    status varchar NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES logins(user_id)
+)
